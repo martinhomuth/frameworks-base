@@ -277,7 +277,7 @@ final class LogicalDisplay {
      * @param isBlanked True if the device is being blanked.
      */
     public void configureDisplayInTransactionLocked(DisplayDevice device,
-            boolean isBlanked) {
+            boolean isBlanked, boolean isFullScreen) {
         // Set the layer stack.
         device.setLayerStackInTransactionLocked(isBlanked ? BLANK_LAYER_STACK : mLayerStack);
 
@@ -340,6 +340,15 @@ final class LogicalDisplay {
             displayRectWidth = displayInfo.logicalWidth * physHeight / displayInfo.logicalHeight;
             displayRectHeight = physHeight;
         }
+
+        /* add by allwinner */
+        if (displayDeviceInfo.type == Display.TYPE_HDMI) {
+            if (isFullScreen && displayInfo.logicalWidth > displayInfo.logicalHeight) {
+                displayRectWidth = physWidth;
+                displayRectHeight = physHeight;
+            }
+        }
+
         int displayRectTop = (physHeight - displayRectHeight) / 2;
         int displayRectLeft = (physWidth - displayRectWidth) / 2;
         mTempDisplayRect.set(displayRectLeft, displayRectTop,

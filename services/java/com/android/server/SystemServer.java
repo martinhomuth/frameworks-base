@@ -20,14 +20,18 @@ import android.app.ActivityManagerNative;
 import android.app.ActivityThread;
 import android.app.IAlarmManager;
 import android.app.INotificationManager;
+import android.app.PackageInstallObserver;
 import android.app.usage.UsageStatsManagerInternal;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.VerificationParams;
 import android.content.res.Configuration;
+import android.os.DynamicPManager;
 import android.content.res.Resources.Theme;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.FactoryTest;
@@ -165,6 +169,10 @@ public final class SystemServer {
      * The main entry point from zygote.
      */
     public static void main(String[] args) {
+        if (SystemProperties.getInt("zygote.mount_fs_data_done", 0) == 1
+            && SystemProperties.getBoolean("persist.sys.boot.first", true)) {
+            SystemProperties.set("persist.sys.boot.first", "0");
+        }
         new SystemServer().run();
     }
 
@@ -380,6 +388,28 @@ public final class SystemServer {
         // The sensor service needs access to package manager service, app ops
         // service, and permissions service, therefore we start it after them.
         startSensorService();
+
+        Slog.i(TAG, "first boot preinstall");
+        if (mFirstBoot)
+            preinstall("/system/preinstall");
+    }
+
+    private void preinstall(String path) {
+        Slog.i(TAG, "preinstall start");
+        if (path == null) {
+            return;
+        }
+        File[] files = new File(path).listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File apkFile : files) {
+            String apkFilePath = Uri.fromFile(apkFile).getPath();
+            Slog.i(TAG, "preinstall apk " + apkFilePath);
+            PackageInstallObserver obs = new PackageInstallObserver();
+            VerificationParams verificationParams = new VerificationParams(null, null, null, VerificationParams.NO_UID, null);
+            mPackageManagerService.installPackage(apkFilePath, obs.getBinder(), 0, null, verificationParams, null);
+        }
     }
 
     /**
@@ -408,6 +438,7 @@ public final class SystemServer {
         final Context context = mSystemContext;
         AccountManagerService accountManager = null;
         ContentService contentService = null;
+        DynamicPManagerService dpm = null;
         VibratorService vibrator = null;
         IAlarmManager alarm = null;
         IMountService mountService = null;
@@ -477,6 +508,8 @@ public final class SystemServer {
             Slog.i(TAG, "System Content Providers");
             mActivityManagerService.installSystemProviders();
 
+            dpm = new DynamicPManagerService(context);
+            ServiceManager.addService(DynamicPManager.DPM_SERVICE, dpm);
             Slog.i(TAG, "Vibrator Service");
             vibrator = new VibratorService(context);
             ServiceManager.addService("vibrator", vibrator);
@@ -1067,6 +1100,11 @@ public final class SystemServer {
             reportWtf("making Display Manager Service ready", e);
         }
 
+               try {
+                       if(dpm != null) dpm.systemReady();
+               }catch (Throwable e){
+                       reportWtf("making DynamicPower Service ready", e);
+               }
         // These are needed to propagate to the runnable below.
         final NetworkManagementService networkManagementF = networkManagement;
         final NetworkStatsService networkStatsF = networkStats;

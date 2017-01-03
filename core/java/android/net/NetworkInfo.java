@@ -255,6 +255,15 @@ public class NetworkInfo implements Parcelable {
     }
 
     /**
+     * @hide
+     */
+    public boolean isDisConnected(){
+        synchronized (this) {
+            return mState == State.DISCONNECTED;
+        }
+    }
+
+    /**
      * Indicates whether network connectivity is possible. A network is unavailable
      * when a persistent or semi-persistent condition prevents the possibility
      * of connecting to that network. Examples include

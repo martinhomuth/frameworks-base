@@ -16,6 +16,8 @@
 
 package com.android.keyguard;
 
+import static android.telephony.TelephonyManager.SIM_STATE_READY;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -28,6 +30,7 @@ import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.telephony.ServiceState;
 import android.telephony.SubscriptionInfo;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.text.method.SingleLineTransformationMethod;
 import android.util.AttributeSet;
@@ -51,6 +54,8 @@ public class CarrierText extends TextView {
     private KeyguardUpdateMonitor mKeyguardUpdateMonitor;
 
     private WifiManager mWifiManager;
+
+    private TelephonyManager mTm;
 
     private KeyguardUpdateMonitorCallback mCallback = new KeyguardUpdateMonitorCallback() {
         @Override
@@ -88,6 +93,7 @@ public class CarrierText extends TextView {
         super(context, attrs);
         mIsEmergencyCallCapable = context.getResources().getBoolean(
                 com.android.internal.R.bool.config_voice_capable);
+        mTm = TelephonyManager.from(context);
         boolean useAllCaps;
         TypedArray a = context.getTheme().obtainStyledAttributes(
                 attrs, R.styleable.CarrierText, 0, 0);
@@ -184,6 +190,11 @@ public class CarrierText extends TextView {
         if (!anySimReadyAndInService && WirelessUtils.isAirplaneModeOn(mContext)) {
             displayText = getContext().getString(R.string.airplane_mode);
         }
+
+        if (mTm.getSimState() != SIM_STATE_READY) {
+                displayText = "";
+        }
+
         setText(displayText);
     }
 

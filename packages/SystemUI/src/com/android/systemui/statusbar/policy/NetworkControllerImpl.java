@@ -448,6 +448,9 @@ public class NetworkControllerImpl extends BroadcastReceiver
     @VisibleForTesting
     protected void updateNoSims() {
         boolean hasNoSims = mHasMobileDataFeature && mMobileSignalControllers.size() == 0;
+        if (!mMobileDataController.isMobileDataSupported()) {
+            hasNoSims = false;
+        }
         if (hasNoSims != mHasNoSims) {
             mHasNoSims = hasNoSims;
             mCallbackHandler.setNoSims(mHasNoSims);

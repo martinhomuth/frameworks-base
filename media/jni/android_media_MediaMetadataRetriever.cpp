@@ -256,6 +256,8 @@ static jobject android_media_MediaMetadataRetriever_getFrameAtTime(JNIEnv *env, 
     // Call native method to retrieve a video frame
     VideoFrame *videoFrame = NULL;
     sp<IMemory> frameMemory = retriever->getFrameAtTime(timeUs, option);
+    if(option != 0x3)
+    {
     if (frameMemory != 0) {  // cast the shared structure to a VideoFrame object
         videoFrame = static_cast<VideoFrame *>(frameMemory->pointer());
     }
@@ -329,7 +331,42 @@ static jobject android_media_MediaMetadataRetriever_getFrameAtTime(JNIEnv *env, 
         return scaledBitmap;
     }
 
-    return jBitmap;
+        return jBitmap;
+	}
+    else
+    {
+        size_t width, height;
+        
+        if(frameMemory == NULL)
+            return NULL;
+        
+        width = 480;
+        height = (frameMemory->size()/width) + 1;
+        width /= 2;
+        
+        jobject config = env->CallStaticObjectMethod(
+                            fields.configClazz,
+                            fields.createConfigMethod,
+                            GraphicsJNI::colorTypeToLegacyBitmapConfig(kRGB_565_SkColorType));
+        
+        jobject jBitmap = env->CallStaticObjectMethod(
+                                fields.bitmapClazz,
+                                fields.createBitmapMethod,
+                                width,
+                                height,
+                                config);
+        
+		SkBitmap bitmap;
+    	GraphicsJNI::getSkBitmap(env, jBitmap, &bitmap);
+        
+        bitmap.lockPixels();
+        memcpy((uint16_t*)bitmap.getPixels(), frameMemory->pointer(), frameMemory->size());
+
+        bitmap.unlockPixels();
+        
+        return jBitmap;
+    }
+
 }
 
 static jbyteArray android_media_MediaMetadataRetriever_getEmbeddedPicture(

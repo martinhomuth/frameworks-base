@@ -1041,6 +1041,14 @@ public class ConnectivityService extends IConnectivityManager.Stub
                 return getFilteredNetworkInfo(state.networkInfo, state.linkProperties, uid);
             }
         }
+        if(networkType == ConnectivityManager.TYPE_MOBILE){
+            NetworkState state = getUnfilteredActiveNetworkState(uid);
+            if((state.networkInfo !=null) && state.networkInfo.isDisConnected()
+                && (SystemProperties.getBoolean("ro.sw.embeded.telephony",false) == false)){
+               log("getNetworkInfo return info null" );
+               return null;
+            }
+        }
         NetworkState state = getFilteredNetworkState(networkType, uid);
         return state.networkInfo;
     }

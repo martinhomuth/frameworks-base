@@ -77,4 +77,7 @@ interface IDisplayManager {
 
     // No permissions required but must be same Uid as the creator.
     void releaseVirtualDisplay(in IVirtualDisplayCallback token);
+
+    //add by allwinner
+    int setDisplayParameter(int displaytype, int cmd, int para0, int para1, int para2);
 }

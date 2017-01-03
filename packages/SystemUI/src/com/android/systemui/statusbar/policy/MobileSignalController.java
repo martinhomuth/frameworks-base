@@ -207,7 +207,8 @@ public class MobileSignalController extends SignalController<
         // Show icon in QS when we are connected or need to show roaming.
         boolean showDataIcon = mCurrentState.dataConnected
                 || mCurrentState.iconGroup == TelephonyIcons.ROAMING;
-        IconState statusIcon = new IconState(mCurrentState.enabled && !mCurrentState.airplaneMode,
+        IconState statusIcon = new IconState(mCurrentState.enabled && !mCurrentState.airplaneMode
+                && mNetworkController.getMobileDataController().isMobileDataSupported(),
                 getCurrentIconId(), contentDescription);
 
         int qsTypeIcon = 0;
